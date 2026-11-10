@@ -1,6 +1,6 @@
 # M1 — Foundation: sign-in + real inbox
 
-**Goal:** the owner opens Ploof in the iOS simulator, taps "Sign in with Microsoft", signs in with a
+**Goal:** the owner opens Next Wave in the iOS simulator, taps "Sign in with Microsoft", signs in with a
 personal Outlook.com account, and the **existing screens** show their **real mail**: read threads,
 reply, archive, delete, flag, mark read/unread. No AI yet.
 
@@ -30,13 +30,13 @@ Create `service/` per the layout in `docs/ARCHITECTURE.md` §2.
   ```
   PORT=8787
   PUBLIC_BASE_URL=http://localhost:8787
-  DATABASE_URL=postgres://ploof:ploof@localhost:5432/ploof
+  DATABASE_URL=postgres://nextwave:nextwave@localhost:5432/nextwave
   MS_CLIENT_ID=00000000-0000-0000-0000-000000000000
   MS_CLIENT_SECRET=replace-me
   MS_REDIRECT_URI=http://localhost:8787/auth/callback
   MS_AUTHORITY=https://login.microsoftonline.com/consumers
   TOKEN_ENCRYPTION_KEY=base64-32-bytes   # openssl rand -base64 32
-  APP_CALLBACK_URL=ploof://auth/done
+  APP_CALLBACK_URL=nextwave://auth/done
   ```
 - `service/README.md`: how to run (`docker compose up -d`, `npm run migrate`, `npm run dev`, `npm test`).
 
@@ -72,14 +72,14 @@ login code is single-use and expires; token is stored encrypted (ciphertext ≠ 
 graph-token refreshes and persists rotated refresh tokens; `invalid_grant` → 401 reauth_required; no tokens in logs.
 
 **Acceptance:** tests pass; with the owner's real `.env`, opening `http://localhost:8787/auth/start` in a browser
-completes Microsoft sign-in and ends on a `ploof://auth/done?code=…` redirect (browser will say it can't open it — that's fine).
+completes Microsoft sign-in and ends on a `nextwave://auth/done?code=…` redirect (browser will say it can't open it — that's fine).
 
 ---
 
 ## M1.3 — iOS: `MailRepository` refactor (no behavior change)
 **Branch:** `m1/ios-repository` (independent of service work)
 
-- Add `Ploof/Data/MailRepository.swift`:
+- Add `NextWave/Data/MailRepository.swift`:
   ```swift
   protocol MailRepository: Sendable {
       func loadInbox() async throws -> [MailThread]          // all folders the UI needs; M1 may load inbox + archive + sent
@@ -93,10 +93,10 @@ completes Microsoft sign-in and ends on a `ploof://auth/done?code=…` redirect 
   ```
   (Adjust signatures if needed; keep it small.)
 - `MockMailRepository` returns `MockThreads.all` and makes actions no-ops (the store already updates state optimistically).
-- `PloofStore` takes a repository in its initializer; actions update local state **optimistically**, then call the
+- `NextWaveStore` takes a repository in its initializer; actions update local state **optimistically**, then call the
   repository; on failure, roll back and show a toast ("Couldn't archive. Try again.").
 - Add `isLoading` / `loadError` state and pull-to-refresh on the Mail list (`.refreshable`).
-- Promises stay mock-only in M1 (keep `MockPromises` when in mock mode; empty array in real mode — the existing
+- Commitments stay mock-only in M1 (keep `MockCommitments` when in mock mode; empty array in real mode — the existing
   empty states handle it).
 
 **Acceptance:** app behaves exactly as `v0.1-ux` with mock data; build has zero new warnings; previews still work.
@@ -106,12 +106,12 @@ completes Microsoft sign-in and ends on a `ploof://auth/done?code=…` redirect 
 ## M1.4 — iOS: sign-in and session
 **Branch:** `m1/ios-signin` (after M1.2 merged or its API stable)
 
-- `Ploof/Data/PloofAPI.swift`: base URL from a build setting / `Info.plist` key `PLOOF_API_BASE_URL`
+- `NextWave/Data/NextWaveAPI.swift`: base URL from a build setting / `Info.plist` key `NEXTWAVE_API_BASE_URL`
   (Debug default `http://localhost:8787`). Methods: `exchangeLoginCode`, `me`, `graphToken`, `signOut`.
   Add an App Transport Security exception for `localhost` in Debug only.
-- Register URL scheme `ploof` (Info.plist `CFBundleURLTypes` via build settings / generated Info.plist keys).
+- Register URL scheme `nextwave` (Info.plist `CFBundleURLTypes` via build settings / generated Info.plist keys).
 - Onboarding's "Sign in with Microsoft" button: `ASWebAuthenticationSession(url: {base}/auth/start,
-  callbackURLScheme: "ploof")` → parse `code` → `exchangeLoginCode` → store session token in the **Keychain**
+  callbackURLScheme: "nextwave")` → parse `code` → `exchangeLoginCode` → store session token in the **Keychain**
   (small wrapper, no third-party libs) → enter the app.
 - On launch: if a session exists, skip onboarding; if any call returns `reauth_required`, return to onboarding.
 - Settings → Accounts shows the real email/name; add **Sign out**.
@@ -138,11 +138,11 @@ Call Graph v1.0 (`https://graph.microsoft.com/v1.0`) with the token from `GET /v
 - **Read:** `PATCH /me/messages/{id}` `{ "isRead": true|false }` for every unread message in the thread.
 - Handle 429/503 with `Retry-After` back-off; never log message content.
 - **Placeholder triage (until M2 AI):**
-  - Updates — sender contains `noreply`, `no-reply`, `donotreply`, `notifications`, `newsletter`, or the user isn't in To/Cc.
+  - Notifications — sender contains `noreply`, `no-reply`, `donotreply`, `notifications`, `newsletter`, or the user isn't in To/Cc.
   - Waiting — the latest message is from the user.
   - Needs you — latest message is from someone else and the user is in **To**.
-  - FYI — everything else.
-  - `oneLiner` = latest `bodyPreview` (trimmed to ~140 chars); `stands` = "Ploof will summarize this once AI is on."
+  - Updates — everything else. `isImportant` = false for everything until M2.
+  - `oneLiner` = latest `bodyPreview` (trimmed to ~140 chars); `stands` = "Outlook will summarize this once AI is on."
   - `suggestedReplies` = `[]`.
 
 **Acceptance:** signed in with a real personal account, the Mail tab shows real threads across all four chips;
@@ -157,7 +157,7 @@ Outlook.com on the web within a few seconds; pull-to-refresh works; airplane mod
 - Update `AGENTS.md` "Current status", `docs/ROADMAP.md` (M1 → Done), and the decisions log for any choices made.
 - Tag the merge commit `v0.2-foundation`.
 
-**Checklist:** fresh install → onboarding → sign in → Today renders (Needs you from real mail, empty promise states) →
+**Checklist:** fresh install → onboarding → sign in → Today renders (Needs you and Waiting show real mail as email cards; Updates is empty; no commitments yet) →
 Mail chips each show threads → open thread → reply → appears in Outlook.com Sent → archive from list → gone from
 inbox, present in Archive folder → flag/unflag → read/unread → relaunch stays signed in → sign out → onboarding →
 `-useMockData YES` still shows the full prototype.

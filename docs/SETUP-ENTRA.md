@@ -1,6 +1,6 @@
 # Microsoft Entra app registration (owner task, one time)
 
-This registers Ploof with Microsoft so people can sign in with personal Outlook.com accounts.
+This registers Next Wave with Microsoft so people can sign in with personal Outlook.com accounts.
 **Agents: you can't do this. Don't ask for the client secret; the owner puts it in `service/.env`.**
 
 Use a **personal** Microsoft account and a **personal** directory — not a work/company tenant, so the
@@ -13,7 +13,7 @@ registration belongs to the owner.
 
 ## B. Register the app
 1. **Applications → App registrations → + New registration**
-2. Name: `Ploof`
+2. Name: `Next Wave` (shown on the Microsoft consent screen; an existing registration named `Ploof` can be renamed under **Branding & properties**)
 3. Supported account types: **Personal Microsoft accounts only**
 4. Redirect URI: platform **Web**, `http://localhost:8787/auth/callback`
 5. **Register**, then copy the **Application (client) ID** from Overview → `MS_CLIENT_ID`.
@@ -23,11 +23,11 @@ registration belongs to the owner.
 No admin consent needed (personal accounts consent at sign-in).
 
 ## D. Client secret
-**Certificates & secrets → New client secret** → description `ploof-service-dev`, 180 days → copy the **Value**
+**Certificates & secrets → New client secret** → description `nextwave-service-dev`, 180 days → copy the **Value**
 (shown once) → `MS_CLIENT_SECRET`. Store it in a password manager. Rotate before it expires.
 
 ## E. Optional
-- **Branding & properties:** upload the Ploof icon (`Ploof/Assets.xcassets/AppIcon.appiconset/icon-1024.png`).
+- **Branding & properties:** upload the Next Wave icon (`NextWave/Assets.xcassets/AppIcon.appiconset/icon-1024.png`).
 - **Publisher verification** (later, before public launch): removes "unverified" from the consent screen.
 
 ## Putting the values in place

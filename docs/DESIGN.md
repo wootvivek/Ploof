@@ -1,4 +1,4 @@
-# Ploof — design system and UX rules
+# Outlook Next Wave — design system and UX rules
 
 The UX was iterated screen by screen with the owner and approved. **Preserve it.** When adding
 something new, copy an existing pattern from this doc rather than inventing a new one.
@@ -7,8 +7,8 @@ something new, copy an existing pattern from this doc rather than inventing a ne
 - **Liquid Glass everywhere it belongs** (iOS 26 APIs): the system tab bar and toolbars, `.glassEffect`
   on cards, chips and floating buttons, `.buttonStyle(.glass)` / `.glassProminent`, `GlassEffectContainer`
   for groups of chips so they merge and morph.
-- **A soft mesh-gradient backdrop** (`PloofBackground`) behind AI screens so glass has something to refract.
-  Use `PloofBackground(subtle: true)` behind reading-heavy screens (Thread).
+- **A soft mesh-gradient backdrop** (`NextWaveBackground`) behind AI screens so glass has something to refract.
+  Use `NextWaveBackground(subtle: true)` behind reading-heavy screens (Thread).
 - **Plain system background** for the Mail list (dense reading).
 - **Scroll-edge effects:** bars that sit over scrolling content use `.safeAreaBar(edge:)` (e.g. triage chips,
   thread reply bar), not `.safeAreaInset`, so content blurs under them instead of clashing.
@@ -16,23 +16,23 @@ something new, copy an existing pattern from this doc rather than inventing a ne
 - **Dynamic Type** to the largest accessibility size; layouts must reflow (see `BriefCard`'s
   `tileLayout`, which stacks tiles at accessibility sizes).
 
-## Tokens (`Ploof/DesignSystem/Theme.swift`)
+## Tokens (`NextWave/DesignSystem/Theme.swift`)
 | Token | Use |
 |---|---|
 | `AccentColor` (asset catalog) | Brand periwinkle; tint for icons, selected states, primary buttons. |
 | `Theme.overdue` (#F0506E) | Overdue badges, overdue glow, Needs you. |
-| `Theme.today` (#F59E0B) | Due today, Late on you, Nudge buttons. |
+| `Theme.today` (#F59E0B) | Due today, Follow up buttons. |
 | `Theme.soon` (#6C6AF4) | Due in 1–2 days. |
-| `Theme.settled` (#22C55E) | Settle actions and confirmations. |
-| `TriageBucket.tint` | Needs you (rose), Waiting (amber), FYI (teal), Updates (gray). |
+| `Theme.done` (#22C55E) | Done actions and confirmations. |
+| `TriageBucket.tint` | Needs you (rose), Waiting (amber), Updates (teal), Notifications (gray). Today's tiles use the same tints as the Mail chips. |
 | `Theme.cardRadius` = 22 | Standard card corner radius. Brief card uses 28. |
 
-## Components (`Ploof/DesignSystem/`)
+## Components (`NextWave/DesignSystem/`)
 | Component | File | Use |
 |---|---|---|
-| `PloofBackground` | `PloofBackground.swift` | Mesh gradient backdrop (light/dark variants, `subtle`). |
+| `NextWaveBackground` | `NextWaveBackground.swift` | Mesh gradient backdrop (light/dark variants, `subtle`). |
 | `AvatarView` | `Avatar.swift` | Gradient circle with initials; color from `Person.hue`. |
-| `.ploof(_:)` / `PuffBurst` | `PloofEffect.swift` | The signature settle animation (shrink + blur + puff particles). |
+| `.puff(_:)` / `PuffBurst` | `PuffEffect.swift` | The signature animation for marking a commitment done (shrink + blur + puff particles). |
 | `.plainRow(top:bottom:)` | `Components.swift` | Transparent, separator-free `List` row so glass cards float. |
 | `NavRow` | `Components.swift` | Tap-to-push wrapper without the list chevron. |
 | `SectionHeader` | `Components.swift` | Icon + title + optional trailing count, used inside lists. |
@@ -42,23 +42,30 @@ something new, copy an existing pattern from this doc rather than inventing a ne
 | `ToastView` | `Components.swift` | Glass capsule toast with optional Undo; shown by `RootTabs`. |
 | `Shimmer` | `Components.swift` | "AI is working" sweep over text. |
 | `PressScaleStyle` | `Features/Today/BriefCard.swift` | Gentle squish for custom tappable cards. |
-| `promiseSwipeActions` | `Features/Today/FocusedPromisesView.swift` | Settle (right) / Snooze + Not a promise (left). Reuse for any promise list. |
+| `commitmentSwipeActions` | `Features/Today/CommitmentCard.swift` | Done (right) / Snooze + Not a commitment (left). Reuse for any commitment list. |
+| `MailCard` / `mailSwipeActions` | `Features/Today/CommitmentCard.swift` | Email with no commitment, in the same skeleton as `CommitmentCard` (time where the due badge would be). Archive (right) / Read-Unread (left). |
 
 ## Interaction patterns
-- **Promises:** swipe right = settle (full swipe allowed) → `.ploof` animation, success haptic,
-  optional sound, toast with Undo. Swipe left = Snooze / Not a promise. Overdue promises pulse a red border.
+- **Commitments:** swipe right = done (full swipe allowed) → `.puff` animation, success haptic,
+  optional sound, toast with Undo. Swipe left = Snooze / Not a commitment. Overdue commitments pulse a red border.
 - **Mail rows:** swipe left = Delete (full swipe) / Archive; swipe right = Read/Unread, Flag.
-- **Pushed filtered lists** (You owe, Late on you, Need you): large title + one-line secondary subtitle +
-  glass cards on `PloofBackground` + standard back button. **All three must stay visually consistent.**
+- **Today mirrors Mail:** three tiles, Needs you · Waiting · Updates, with the same names, symbols and tints
+  as the Mail chips (`TriageBucket.todaySections`). The tiles are the switch for the one list below; the
+  selected tile has a tinted fill and outline. Don't add a second selector or separate sections for emails
+  and commitments: an item appears once. On Today, swipe right always means "handled".
+- **One vocabulary** (see the concepts table in `docs/PRODUCT.md`): commitment, yours / theirs, overdue,
+  due today, Done, Follow up, Updates, Notifications. Don't use promise, owe, late, settle, nudge or FYI in UI text.
+- **Pushed lists** (when a screen needs one): large title + one-line secondary subtitle + glass cards on
+  `NextWaveBackground` + standard back button.
 - **Replying** to a Needs you thread moves it to Waiting, clears suggested replies and updates its summary.
-- **Every AI claim is traceable:** promise cards show the quote and who said it; Ask answers show source chips.
-- **Haptics:** `.sensoryFeedback(.success, trigger: store.settleTick)` on settle. Don't add haptics elsewhere without reason.
+- **Every AI claim is traceable:** commitment cards show the quote and who said it; Ask answers show source chips.
+- **Haptics:** `.sensoryFeedback(.success, trigger: store.doneTick)` when a commitment is marked done. Don't add haptics elsewhere without reason.
 - **Toasts** auto-dismiss after 3 s; destructive or AI actions offer Undo when possible.
 
 ## Copy style
 - Short, warm, plain. Sentence case. No exclamation marks in UI chrome (fine in mock email content).
-- Speak to the user as "you"; refer to the AI as "Ploof".
-- Examples: "You owe nothing. Enjoy it." · "Got it. Ploof will learn from this." · "Swipe right to settle · left to snooze".
+- Speak to the user as "you"; refer to the AI as "Outlook".
+- Examples: "Nothing needs you. Enjoy it." · "Got it. Outlook will learn from this." · "Swipe right when it's done · left for more".
 
 ## Tab bar
 Today (`sparkles`) · Mail (`tray`, badge = unread Needs you) · Settings (`gearshape`) · Ask (search role,

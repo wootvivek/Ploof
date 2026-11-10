@@ -22,6 +22,18 @@ Tip: launch with the argument `-hasOnboarded YES` to skip onboarding. Settings â
 | `Ploof/DesignSystem/` | Colors (`Theme.swift`), glass components, the ploof animation, background. |
 | `Ploof/Features/` | One folder per screen: Today, Mail, Thread, Compose, Ask, Settings, Onboarding. |
 | `Ploof/Store/PloofStore.swift` | In-memory app state (throwaway; replaced by Graph + the Ploof service later). |
-| `docs/PLAN.md` | The product plan and later phases. |
+| `docs/` | Product, design, architecture, roadmap and task specs (see below). |
 
 The Xcode project uses synchronized folders: any file added under `Ploof/` is part of the app automatically.
+
+## For coding agents
+Start with [`AGENTS.md`](AGENTS.md) (GitHub Copilot also reads [`.github/copilot-instructions.md`](.github/copilot-instructions.md)).
+
+| Doc | What it covers |
+|---|---|
+| [`docs/PRODUCT.md`](docs/PRODUCT.md) | Vision, concepts, screens, principles, non-goals, decisions log |
+| [`docs/DESIGN.md`](docs/DESIGN.md) | Design system, components, interaction patterns, copy, accessibility |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | iOS app, Ploof service, sign-in flow, AI pipeline, security |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Milestones M0â€“M6 and owner-only tasks |
+| [`docs/tasks/M1-foundation.md`](docs/tasks/M1-foundation.md) | The next milestone, split into PR-sized sub-tasks |
+| [`docs/SETUP-ENTRA.md`](docs/SETUP-ENTRA.md) | Microsoft app registration (owner task) |

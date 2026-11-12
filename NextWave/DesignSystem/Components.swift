@@ -161,7 +161,7 @@ struct GlassSegmented<Option: Hashable & Identifiable>: View {
 
 struct ToastView: View {
     let toast: Toast
-    let undo: (String) -> Void
+    let undo: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -169,8 +169,8 @@ struct ToastView: View {
                 .foregroundStyle(.tint)
             Text(toast.text)
                 .lineLimit(1)
-            if let id = toast.undoCommitmentID {
-                Button("Undo") { undo(id) }
+            if toast.canUndo {
+                Button("Undo") { undo() }
                     .fontWeight(.bold)
             }
         }

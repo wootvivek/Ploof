@@ -5,13 +5,13 @@ import Foundation
 /// "by Thursday" in an email in step with the due label on its commitment.
 enum MockClock {
     static func ago(_ hours: Double) -> Date {
-        Date.now.addingTimeInterval(-hours * 3600)
+        AppClock.now.addingTimeInterval(-hours * 3600)
     }
 
     /// 5 PM on the day `n` business days from today. Negative values are in the past.
     static func biz(_ n: Int) -> Date {
         let cal = Calendar.current
-        var day = cal.startOfDay(for: .now)
+        var day = cal.startOfDay(for: AppClock.now)
         var left = abs(n)
         let step = n < 0 ? -1 : 1
         while left > 0 {
@@ -19,6 +19,11 @@ enum MockClock {
             if !cal.isDateInWeekend(day) { left -= 1 }
         }
         return cal.date(byAdding: .hour, value: 17, to: day) ?? day
+    }
+
+    /// A clock time on the day `n` business days from today, for the mock calendar.
+    static func at(_ n: Int, _ hour: Int, _ minute: Int = 0) -> Date {
+        Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: biz(n)) ?? biz(n)
     }
 
     /// Weekday name of that business day, e.g. "Thursday". Use for days within a week.

@@ -2,60 +2,67 @@ import Foundation
 
 /// Synthetic people for the proof of concept. Edit freely.
 ///
-/// The mailbox belongs to Vivek, Director of Product for the Mark 8 at Contoso.
-/// Companies and most names are the fictitious ones Microsoft publishes for demos and docs
-/// (Contoso, Fabrikam, Northwind Traders, the Microsoft 365 sample users, …). No real people or data.
+/// The mailbox belongs to Vivek, who leads product for "Sandpiper", a fictional release of Outlook
+/// Mobile, on a fictional Outlook Mobile team at Microsoft. Everything here is made up: the team, the
+/// roles, the release and its numbers. The names are the fictitious people and companies Microsoft
+/// publishes for demos and documentation, so nobody is mistaken for a real colleague or customer.
+/// Addresses use first.last@microsoft.com and are not real mailboxes.
 enum MockPeople {
-    private static func contoso(_ id: String, _ name: String, _ alias: String, _ hue: Double) -> Person {
-        Person(id: id, name: name, email: "\(alias)@contoso.com", hue: hue)
+    private static func team(_ id: String, _ name: String, _ hue: Double) -> Person {
+        let address = name.lowercased().split(separator: " ").joined(separator: ".")
+        return Person(id: id, name: name, email: "\(address)@microsoft.com", hue: hue)
+    }
+
+    private static func system(_ id: String, _ name: String, _ alias: String, _ hue: Double) -> Person {
+        Person(id: id, name: name, email: "\(alias)@microsoft.com", hue: hue)
     }
 
     private static func ext(_ id: String, _ name: String, _ email: String, _ hue: Double) -> Person {
         Person(id: id, name: name, email: email, hue: hue)
     }
 
-    static let me = Person(id: "me", name: "Vivek", email: "vivek@contoso.com", hue: 0.68)
+    static let me = Person(id: "me", name: "Vivek", email: "vivek.demo@microsoft.com", hue: 0.68)
 
-    // MARK: Contoso leadership
-    static let patti = contoso("patti", "Patti Fernandez", "pattif", 0.95)        // President
-    static let erik = contoso("erik", "Erik Nason", "erikn", 0.58)                // Chief Product Officer, Vivek's manager
-    static let carlos = contoso("carlos", "Carlos Slattery", "carloss", 0.10)     // CFO
-    static let miriam = contoso("miriam", "Miriam Graham", "miriamg", 0.83)       // Director, Sales & Marketing
-    static let nestor = contoso("nestor", "Nestor Wilke", "nestorw", 0.30)        // Director, Operations
-    static let lee = contoso("lee", "Lee Gu", "leeg", 0.47)                       // Director, Manufacturing
+    // MARK: Leadership
+    static let patti = team("patti", "Patti Fernandez", 0.95)        // Corporate Vice President
+    static let erik = team("erik", "Erik Nason", 0.58)               // Partner Director of Product, Vivek's manager
+    static let carlos = team("carlos", "Carlos Slattery", 0.10)      // Finance Director
+    static let miriam = team("miriam", "Miriam Graham", 0.83)        // Director, Product Marketing and Field
+    static let nestor = team("nestor", "Nestor Wilke", 0.30)         // Director, Live Site
+    static let lee = team("lee", "Lee Gu", 0.47)                     // Director of Engineering, Android
 
-    // MARK: Contoso colleagues
-    static let megan = contoso("megan", "Megan Bowen", "meganb", 0.90)            // Marketing Manager
-    static let alexW = contoso("alexw", "Alex Wilber", "alexw", 0.40)             // Marketing Assistant
-    static let adele = contoso("adele", "Adele Vance", "adelev", 0.02)            // Retail Manager
-    static let allan = contoso("allan", "Allan Deyoung", "alland", 0.55)          // IT Admin
-    static let christie = contoso("christie", "Christie Cline", "christiec", 0.78) // Buyer, Procurement
-    static let debra = contoso("debra", "Debra Berger", "debrab", 0.13)           // Executive Assistant to Patti
-    static let diego = contoso("diego", "Diego Siciliani", "diegos", 0.07)        // HR Manager
-    static let emily = contoso("emily", "Emily Braun", "emilyb", 0.73)            // Budget Analyst
-    static let enrico = contoso("enrico", "Enrico Cattaneo", "enricoc", 0.62)     // Attorney
-    static let grady = contoso("grady", "Grady Archie", "gradya", 0.35)           // Designer
-    static let henrietta = contoso("henrietta", "Henrietta Mueller", "henriettam", 0.87) // Developer
-    static let irvin = contoso("irvin", "Irvin Sayers", "irvins", 0.52)           // Project Manager
-    static let isaiah = contoso("isaiah", "Isaiah Langer", "isaiahl", 0.16)       // Sales Rep
-    static let johanna = contoso("johanna", "Johanna Lorenz", "johannal", 0.98)   // Senior Engineer
-    static let joni = contoso("joni", "Joni Sherman", "jonis", 0.80)              // Paralegal
-    static let lidia = contoso("lidia", "Lidia Holloway", "lidiah", 0.93)         // Product Manager on Vivek's team
-    static let lynne = contoso("lynne", "Lynne Robbins", "lynner", 0.22)          // Planner
-    static let pradeep = contoso("pradeep", "Pradeep Gupta", "pradeepg", 0.44)    // Accountant
-    static let kat = contoso("kat", "Kat Larsson", "katl", 0.75)                  // Product Manager on Vivek's team
-    static let daisy = contoso("daisy", "Daisy Phillips", "daisyp", 0.05)         // Data Analyst
-    static let elvia = contoso("elvia", "Elvia Atkins", "elviaa", 0.27)           // Customer Success
-    static let kevin = contoso("kevin", "Kevin Sturgis", "kevins", 0.60)          // Security & Compliance
-    static let mona = contoso("mona", "Mona Kane", "monak", 0.85)                 // UX Research
-    static let colin = contoso("colin", "Colin Ballinger", "colinb", 0.50)        // Engineering Manager, Firmware
-    static let robin = contoso("robin", "Robin Counts", "robinc", 0.00)           // Support Lead
-    static let amanda = contoso("amanda", "Amanda Brady", "amandab", 0.88)        // Recruiter
-    static let cecil = contoso("cecil", "Cecil Folk", "cecilf", 0.33)             // Supply Chain
-    static let wanda = contoso("wanda", "Wanda Howard", "wandah", 0.70)           // Communications
-    static let tim = contoso("tim", "Tim Deboer", "timd", 0.18)                   // QA Lead
-    static let babak = contoso("babak", "Babak Shammas", "babaks", 0.42)          // Data Science
-    static let kayo = contoso("kayo", "Kayo Miwa", "kayom", 0.97)                 // Country Manager, Japan
+    // MARK: Outlook Mobile team
+    static let megan = team("megan", "Megan Bowen", 0.90)            // Product Marketing Manager
+    static let alexW = team("alexw", "Alex Wilber", 0.40)            // Marketing Coordinator
+    static let adele = team("adele", "Adele Vance", 0.02)            // Customer Success, Retail
+    static let allan = team("allan", "Allan Deyoung", 0.55)          // Tenant Admin
+    static let christie = team("christie", "Christie Cline", 0.78)   // Procurement
+    static let debra = team("debra", "Debra Berger", 0.13)           // Executive Assistant to Patti
+    static let diego = team("diego", "Diego Siciliani", 0.07)        // HR Business Partner
+    static let emily = team("emily", "Emily Braun", 0.73)            // Finance Analyst
+    static let enrico = team("enrico", "Enrico Cattaneo", 0.62)      // Attorney
+    static let grady = team("grady", "Grady Archie", 0.35)           // Designer
+    static let henrietta = team("henrietta", "Henrietta Mueller", 0.87) // iOS Engineer
+    static let irvin = team("irvin", "Irvin Sayers", 0.52)           // Release Program Manager
+    static let isaiah = team("isaiah", "Isaiah Langer", 0.16)        // Customer Engineer
+    static let johanna = team("johanna", "Johanna Lorenz", 0.98)     // Senior Engineer, Sync
+    static let joni = team("joni", "Joni Sherman", 0.80)             // Paralegal
+    static let lidia = team("lidia", "Lidia Holloway", 0.93)         // Product Manager on Vivek's team
+    static let lynne = team("lynne", "Lynne Robbins", 0.22)          // Planner
+    static let pradeep = team("pradeep", "Pradeep Gupta", 0.44)      // Finance Analyst, cost modeling
+    static let kat = team("kat", "Kat Larsson", 0.75)                // Product Manager on Vivek's team
+    static let daisy = team("daisy", "Daisy Phillips", 0.05)         // Data Analyst
+    static let elvia = team("elvia", "Elvia Atkins", 0.27)           // Customer Success
+    static let kevin = team("kevin", "Kevin Sturgis", 0.60)          // Security and Compliance
+    static let mona = team("mona", "Mona Kane", 0.85)                // UX Researcher
+    static let colin = team("colin", "Colin Ballinger", 0.50)        // Engineering Manager, iOS
+    static let robin = team("robin", "Robin Counts", 0.00)           // Support Escalation Lead
+    static let amanda = team("amanda", "Amanda Brady", 0.88)         // Recruiter
+    static let cecil = team("cecil", "Cecil Folk", 0.33)             // Partner Dependencies
+    static let wanda = team("wanda", "Wanda Howard", 0.70)           // Communications
+    static let tim = team("tim", "Tim Deboer", 0.18)                 // Quality Lead
+    static let babak = team("babak", "Babak Shammas", 0.42)          // Data Scientist
+    static let kayo = team("kayo", "Kayo Miwa", 0.97)                // Market Lead, Japan
 
     // MARK: Customers and prospects
     static let charlotte = ext("charlotte", "Charlotte Waltson", "charlotte.waltson@northwindtraders.com", 0.57) // VP Store Operations
@@ -63,30 +70,30 @@ enum MockPeople {
     static let hillary = ext("hillary", "Hillary Reyes", "hillary.reyes@northwindtraders.com", 0.82)             // IT Security
     static let ray = ext("ray", "Ray Tanaka", "ray.tanaka@adventure-works.com", 0.37)                            // Head of Field Operations
     static let kristin = ext("kristin", "Kristin Patterson", "kristin.patterson@adventure-works.com", 0.91)      // Program Manager
-    static let will = ext("will", "Will Little", "will.little@tailspintoys.com", 0.24)                           // Merchandising Director
+    static let will = ext("will", "Will Little", "will.little@tailspintoys.com", 0.24)                           // Store Technology
     static let krystal = ext("krystal", "Krystal McKinney", "krystal.mckinney@wingtiptoys.com", 0.77)            // Store Technology
+    static let robert = ext("robert", "Robert Tolbert", "robert.tolbert@woodgrovebank.com", 0.53)                // Workplace Technology
+    static let bryan = ext("bryan", "Bryan Wright", "bryan.wright@humongousinsurance.com", 0.04)                 // IT Director
 
-    // MARK: Suppliers, partners and advisers
-    static let mauricio = ext("mauricio", "Mauricio August", "mauricio.august@fabrikam.com", 0.08)   // Account Director
-    static let lydia = ext("lydia", "Lydia Bauer", "lydia.bauer@fabrikam.com", 0.65)                 // Quality Engineer
-    static let robert = ext("robert", "Robert Tolbert", "robert.tolbert@woodgrovebank.com", 0.53)    // Relationship Manager
-    static let celeste = ext("celeste", "Celeste Burton", "celeste.burton@litwareinc.com", 0.86)     // Account Executive
+    // MARK: Vendors, partners and advisers
+    static let mauricio = ext("mauricio", "Mauricio August", "mauricio.august@fabrikam.com", 0.08)   // Account Director, device test lab
+    static let lydia = ext("lydia", "Lydia Bauer", "lydia.bauer@fabrikam.com", 0.65)                 // Quality Engineer, device test lab
+    static let celeste = ext("celeste", "Celeste Burton", "celeste.burton@litwareinc.com", 0.86)     // Account Executive, crash analytics
     static let serena = ext("serena", "Serena Davis", "serena.davis@proseware.com", 0.94)            // Creative Director
     static let miguel = ext("miguel", "Miguel Garcia", "miguel.garcia@proseware.com", 0.15)          // Account Lead
     static let katri = ext("katri", "Katri Ahokas", "katri.ahokas@treyresearch.net", 0.72)           // Research Director
-    static let daichi = ext("daichi", "Daichi Fukuda", "daichi.fukuda@wideworldimporters.com", 0.48) // Logistics Coordinator
-    static let henry = ext("henry", "Henry Brill", "henry.brill@relecloud.com", 0.61)                // Technical Account Manager
-    static let laurence = ext("laurence", "Laurence Gilbertson", "laurence.gilbertson@adatum.com", 0.29) // Audit Partner
+    static let daichi = ext("daichi", "Daichi Fukuda", "daichi.fukuda@wideworldimporters.com", 0.48) // Localization Coordinator
+    static let henry = ext("henry", "Henry Brill", "henry.brill@relecloud.com", 0.61)                // Technical Account Manager, push relay
+    static let laurence = ext("laurence", "Laurence Gilbertson", "laurence.gilbertson@adatum.com", 0.29) // Accessibility Audit Lead
     static let marie = ext("marie", "Marie Beaudouin", "marie.beaudouin@southridgevideo.com", 0.99)  // Producer
     static let johnie = ext("johnie", "Johnie McConnell", "johnie.mcconnell@firstupconsultants.com", 0.20) // Recruiter
     static let elliot = ext("elliot", "Elliot Woodward", "elliot.woodward@bellowscollege.com", 0.41) // Professor
     static let isaac = ext("isaac", "Isaac Fielder", "isaac.fielder@alpineskihouse.com", 0.56)       // Events Manager
-    static let bryan = ext("bryan", "Bryan Wright", "bryan.wright@humongousinsurance.com", 0.04)     // Underwriter
-    static let beth = ext("beth", "Beth Davies", "beth.davies@vanarsdelltd.com", 0.79)               // Business Development
+    static let beth = ext("beth", "Beth Davies", "beth.davies@blueyonderairlines.com", 0.79)         // Business Development
     static let munger = ext("munger", "Allan Munger", "allan.munger@lucernepublishing.com", 0.32)    // Reporter
     static let cameron = ext("cameron", "Cameron Evans", "cameron.evans@outlook.com", 0.67)          // Candidate
 
-    // MARK: Microsoft 365 and Contoso systems
+    // MARK: Microsoft 365 and internal systems
     static let teams = ext("teams", "Microsoft Teams", "noreply@email.teams.microsoft.com", 0.69)
     static let sharepoint = ext("sharepoint", "SharePoint", "no-reply@sharepointonline.com", 0.49)
     static let onedrive = ext("onedrive", "OneDrive", "no-reply@onedrive.com", 0.59)
@@ -96,15 +103,15 @@ enum MockPeople {
     static let powerbi = ext("powerbi", "Power BI", "no-reply-powerbi@microsoft.com", 0.14)
     static let devops = ext("devops", "Azure DevOps", "azuredevops@microsoft.com", 0.60)
     static let quarantine = ext("quarantine", "Quarantine", "quarantine@messaging.microsoft.com", 0.01)
-    static let contosoLife = contoso("contosolife", "Contoso Life", "contosolife", 0.89)
-    static let itDesk = contoso("itdesk", "Contoso IT Service Desk", "servicedesk", 0.51)
-    static let secOps = contoso("secops", "Contoso Security", "security-noreply", 0.00)
-    static let expenses = contoso("expenses", "Contoso Expenses", "expenses-noreply", 0.31)
-    static let hr = contoso("hr", "Contoso HR", "hr-noreply", 0.06)
-    static let payroll = contoso("payroll", "Contoso Payroll", "payroll-noreply", 0.38)
-    static let learning = contoso("learning", "Contoso Learning", "learning-noreply", 0.74)
-    static let facilities = contoso("facilities", "Contoso Facilities", "facilities", 0.26)
-    static let esign = contoso("esign", "Contoso eSign", "esign-noreply", 0.66)
+    static let teamNews = system("teamnews", "Team News", "outlook-mobile-news", 0.89)
+    static let itDesk = system("itdesk", "IT Service Desk", "it-servicedesk-noreply", 0.51)
+    static let secOps = system("secops", "Security", "security-noreply", 0.00)
+    static let expenses = system("expenses", "Expenses", "expenses-noreply", 0.31)
+    static let hr = system("hr", "HR", "hr-noreply", 0.06)
+    static let payroll = system("payroll", "Payroll", "payroll-noreply", 0.38)
+    static let learning = system("learning", "Learning", "learning-noreply", 0.74)
+    static let facilities = system("facilities", "Facilities", "facilities-noreply", 0.26)
+    static let esign = system("esign", "eSign", "esign-noreply", 0.66)
 
     // MARK: Outside services
     static let travel = ext("travel", "Margie's Travel", "itineraries@margiestravel.com", 0.46)
@@ -121,8 +128,8 @@ enum MockPeople {
     static let alpine = ext("alpine", "Alpine Ski House", "reservations@alpineskihouse.com", 0.56)
 
     // MARK: Junk senders
-    static let phish1 = ext("phish1", "IT Helpdesk", "helpdesk@contoso-support.example", 0.00)
+    static let phish1 = ext("phish1", "IT Helpdesk", "helpdesk@account-verify.example", 0.00)
     static let phish2 = ext("phish2", "Rewards Center", "claims@gift-rewards.example", 0.17)
     static let spam1 = ext("spam1", "LeadGenius Pro", "sales@leadgenius.example", 0.39)
-    static let spam2 = ext("spam2", "Expo Attendee Lists", "lists@expo-data.example", 0.23)
+    static let spam2 = ext("spam2", "Summit Attendee Lists", "lists@summit-data.example", 0.23)
 }

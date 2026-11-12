@@ -4,7 +4,7 @@ Read `AGENTS.md` at the repo root first — it is the source of truth for this p
 doc for your area in `docs/` (PRODUCT, DESIGN, ARCHITECTURE, ROADMAP, and the task spec in `docs/tasks/`).
 
 Key rules (details in `AGENTS.md`):
-- Outlook Next Wave is an **iOS-only, native SwiftUI** mail app, iOS 26+, Liquid Glass. Real sign-in targets **personal Outlook.com accounts only**; the demo data is a synthetic Contoso mailbox.
+- Outlook Next Wave is an **iOS-only, native SwiftUI** mail app, iOS 26+, Liquid Glass. Real sign-in targets **personal Outlook.com accounts only**; the demo data is a synthetic mailbox for a fictional Outlook Mobile team at Microsoft (everything in it is invented).
 - UI text says "Outlook" / "Outlook Next Wave"; code uses `NextWave` (`NextWaveStore`, scheme `NextWave`). The old name "Ploof" is retired; don't reintroduce it.
 - Never reintroduce Focused/Other; triage buckets are Needs you · Waiting · Updates · Notifications.
 - Swift 6 with `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`; data types are `nonisolated` and `Sendable`.

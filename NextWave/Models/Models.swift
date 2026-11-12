@@ -88,6 +88,21 @@ nonisolated struct Message: Identifiable, Hashable, Sendable {
     let body: String
 }
 
+/// A reply short and predictable enough to send in one tap: an approval, a confirmed time, a polite no.
+/// The button shows `label`; the card shows `text`, so you always see what will be sent.
+nonisolated struct QuickReply: Hashable, Sendable {
+    let label: String
+    let text: String
+    /// False when sending it doesn't finish the commitment on the thread (confirming a meeting time, say).
+    var completes = true
+
+    init(_ label: String, _ text: String, completes: Bool = true) {
+        self.label = label
+        self.text = text
+        self.completes = completes
+    }
+}
+
 nonisolated struct MailThread: Identifiable, Hashable, Sendable {
     let id: String
     var subject: String
@@ -104,6 +119,8 @@ nonisolated struct MailThread: Identifiable, Hashable, Sendable {
     /// AI "where this stands" summary shown at the top of the thread.
     var stands: String
     var suggestedReplies: [String] = []
+    /// The one-tap reply for this thread, when there is an obvious one.
+    var quickReply: QuickReply? = nil
     var messages: [Message]
 
     var lastDate: Date { messages.last?.date ?? .distantPast }
@@ -155,11 +172,19 @@ nonisolated struct Commitment: Identifiable, Hashable, Sendable {
     var status: CommitmentStatus = .open
     /// AI-drafted follow-up for someone else's overdue commitment.
     var followUp: String? = nil
+    /// How long this is expected to take you. Nil when there is no basis for an estimate.
+    var effort: Effort? = nil
+    /// The chain of work behind it, in order. Empty means one step of the whole estimate.
+    /// The "before" steps add up to the low end of `effort`.
+    var steps: [Step] = []
+    /// The meeting this work is for, if any. "Before" steps must finish by its start, even when the
+    /// due date is later that day; "after" steps wait until it ends.
+    var anchorEventID: String? = nil
 
     private var dayOffset: Int? {
         guard let due else { return nil }
         let cal = Calendar.current
-        return cal.dateComponents([.day], from: cal.startOfDay(for: .now), to: cal.startOfDay(for: due)).day
+        return cal.dateComponents([.day], from: cal.startOfDay(for: AppClock.now), to: cal.startOfDay(for: due)).day
     }
 
     var isOverdue: Bool { (dayOffset ?? 0) < 0 }
@@ -200,9 +225,13 @@ nonisolated struct ComposeDraft: Identifiable, Sendable {
     var completes: String?
     /// An AI-drafted follow-up on someone else's commitment.
     var isFollowUp = false
+    /// A note proposing a new due date for one of your commitments. Sending it moves the date.
+    var newDueFor: String?
+    var newDue: Date?
 
     var title: String {
         if isFollowUp { return "Follow-up" }
+        if newDueFor != nil { return "New date" }
         return threadID == nil ? "New Message" : "Reply"
     }
 
@@ -228,7 +257,7 @@ nonisolated struct ComposeDraft: Identifiable, Sendable {
 // MARK: - Navigation
 
 nonisolated enum AppTab: Hashable, Sendable {
-    case today, mail, settings, ask
+    case today, mail, calendar, settings, ask
 }
 
 /// One thing on Today: a commitment, or an email with no commitment attached (one that is waiting on a
@@ -259,6 +288,9 @@ nonisolated struct Brief: Sendable {
     let updatesCount: Int
     let unreadUpdatesCount: Int
     let headline: String
+    /// "13 h open · 10.5 h of commitments · 2 at risk" for the days in view.
+    let weekLine: String
+    let atRiskCount: Int
     /// The top update, in one line.
     let worthKnowing: String?
 }
@@ -275,4 +307,10 @@ nonisolated struct Toast: Identifiable, Equatable, Sendable {
     let symbol: String
     let text: String
     var undoCommitmentID: String? = nil
+    /// Set when the toast confirms held time: Undo releases the holds made for this commitment.
+    var undoHoldsFor: String? = nil
+    /// Set when the toast confirms a one-tap send: Undo takes the message back.
+    var undoSend = false
+
+    var canUndo: Bool { undoCommitmentID != nil || undoHoldsFor != nil || undoSend }
 }

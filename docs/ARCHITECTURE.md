@@ -122,10 +122,12 @@ New mail ─► 1 Intake ─► 2 Rules filter ─► 3 Triage (fast model) ─�
    shipping senders → **Notifications** with a template one-liner. Expect ~half of all mail to stop here.
 3. **Triage (Claude, fast/cheap model, every remaining email).** Input: thread state (who wrote last, whether the
    user is To or Cc, unanswered questions to the user, deadlines, the user's replies). Output (structured JSON):
-   `{ bucket, important, one_liner, stands, reason, confidence }`. Re-triage the whole thread on every new message.
+   `{ bucket, important, one_liner, stands, quick_reply, reason, confidence }`. Re-triage the whole thread on every new message.
    - Needs you = someone is asking *the user* for a reply/decision/action and the ball is in their court.
    - Waiting = the user wrote last, or someone owes the user something.
    - Updates = human-written, no action. Notifications = automated mail that passed the filter.
+   - `quick_reply` (`{ label, text, completes }` or null) for Needs you: only when the answer is short and
+     predictable (approve, confirm a time, decline). The app sends it in one tap and can undo it.
    - `important` (true/false) for Updates and Notifications: worth seeing today even though it needs no action
      (a date change, a decision, news about an open commitment, a missed call from a customer).
 4. **Commitments (Claude, stronger model, human threads only).** Input: new message + thread + open commitments for the
@@ -143,6 +145,42 @@ New mail ─► 1 Intake ─► 2 Rules filter ─► 3 Triage (fast model) ─�
 
 A thread drops off the first two once its commitment is done or snoozed. "Overdue" = past its due date;
 "due today" = due date is today. A scheduled job refreshes overdue state.
+
+**Time and fit** (`NextWave/Models/WeekPlanner.swift`, pure functions; the store exposes `weekPlan`):
+1. Open time = working hours (9–5) minus meetings minus held time, for today and the next four working days.
+   Gaps between meetings shorter than 30 minutes don't count.
+2. Each of your open commitments with an estimate and a due date in those days is a **chain of steps**
+   (`Commitment.steps`; none means one step of the whole estimate). `anchorEventID` names the meeting the work is for.
+3. *Before* steps must finish by the deadline: the due date, or the start of the anchor meeting if that is
+   earlier. *After* steps start once the meeting (or due date) has passed and have until the end of the next working day.
+4. Steps are placed soonest deadline first (overdue work first; quicker commitment first on a tie), each one
+   after the previous step in its chain, using time already held for the commitment before any open time.
+5. If a *before* step cannot be placed in full, the commitment is **at risk** and the shortfall is reported.
+   No estimate or no date: not assessed. *After* steps never flag risk.
+
+The plan's `blocks` (held or planned time per step) are what the Calendar tab draws.
+"Hold time" converts a commitment's planned open time into `Hold`s, so the plan does not change, only its
+protection. "Propose new date" picks the earliest working day on which the commitment would fit.
+Planning starts from the current time (`AppClock.now`, rounded up to five minutes): hours already gone today
+are not open. In the prototype the calendar is `MockCalendar`. On real data this needs
+calendar read access (and write access to create holds), which **M1 does not request**; estimates would come
+from the service (history of similar work), with the same rule: a range with its basis, or nothing.
+Held time is private: other people see busy, and nothing here feeds reports about the user.
+
+**The service seam and the demo service** (`NextWave/Models/Service.swift`, `NextWave/Service/`):
+the app gets a `MailboxSnapshot` and then a stream of `ServiceEvent`s through the `MailService` protocol:
+`mail` (a new thread, already triaged), `reply` (new messages plus the thread's refreshed annotation),
+`commitmentFound` (a few seconds after its mail), `commitmentDone` (someone delivered), `meetingAdded`,
+`meetingCanceled`. `SyncEngine` applies them to the store; `MailboxSnapshot.apply` is the pure version
+used by the data check. New mail is stamped with the time it arrives.
+
+Today the only implementation is `DemoService`, a synthetic middle tier that plays `DemoScenario`: a
+starting mailbox cut from the full mock data and 32 events over ten minutes. The real service (M1 onward)
+goes behind the same protocol, fed by Graph notifications and the AI pipeline, so the app side does not change.
+
+**One clock** (`NextWave/Models/AppClock.swift`): everything reads the time from `AppClock.now`, never
+`Date.now`. A demo reset re-anchors the mailbox, due dates and calendar to that moment. With "Start the
+day at 9:00 AM" on, the clock is shifted so the app's day begins at 9:00 and then runs in real time.
 
 **Feedback loop:** bucket changes, "not a commitment", snoozes are stored and used as per-user examples and sender
 rules, and to grow the eval sets.

@@ -149,7 +149,8 @@ private struct MessageCard: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(message.from.displayName)
                         .font(.subheadline.weight(.semibold))
-                    Text(message.date.formatted(.relative(presentation: .named)))
+                    // Shift back by the demo clock's offset so "5 minutes ago" is measured from the app's now.
+                    Text(message.date.addingTimeInterval(-AppClock.offset).formatted(.relative(presentation: .named)))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

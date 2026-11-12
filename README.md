@@ -4,7 +4,7 @@ An internal proof of concept for an AI-first Outlook on iOS (first prototyped un
 **commitments** (yours and other people's), **AI triage** (Needs you · Waiting · Updates · Notifications),
 summaries, drafts in your voice, and **Ask Outlook**.
 
-This is the **UX prototype**: SwiftUI + Liquid Glass on a synthetic Contoso mailbox (144 threads, 42 commitments),
+This is the **UX prototype**: SwiftUI + Liquid Glass on a synthetic mailbox for a fictional Outlook Mobile team (144 threads, 42 commitments),
 built from Microsoft's public fictitious companies and sample users. No sign-in, no network, no AI calls.
 
 ## Run it
@@ -21,7 +21,7 @@ Tip: launch with the argument `-hasOnboarded YES` to skip onboarding. Settings �
 |---|---|
 | `NextWave/MockData/` | The synthetic mailbox, commitments and Ask answers. Edit freely, then run the check in `AGENTS.md`. |
 | `NextWave/DesignSystem/` | Colors (`Theme.swift`), glass components, the puff animation, background. |
-| `NextWave/Features/` | One folder per screen: Today, Mail, Thread, Compose, Ask, Settings, Onboarding. |
+| `NextWave/Features/` | One folder per screen: Today, Mail, Calendar, Thread, Compose, Ask, Settings, Onboarding. |
 | `NextWave/Store/NextWaveStore.swift` | In-memory app state (throwaway; replaced by Graph + the Next Wave service later). |
 | `docs/` | Product, design, architecture, roadmap and task specs (see below). |
 

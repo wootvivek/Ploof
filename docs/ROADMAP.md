@@ -12,7 +12,7 @@ Update the status column when a milestone's "done when" is met and verified.
 | M4 | **Act: full mail parity + voice** | Planned | Compose/reply/forward with attachments, drafts, folders, search, multiple accounts, signatures; "rewrite in my voice" and suggested replies from the model. Parity with Outlook for iOS mail basics. |
 | M5 | **Ask + notify** | Planned | Ask Outlook agent with citations; push relay + APNs for Needs you; morning brief; follow-ups drafted by the model. |
 | M6 | **Delight + ship** | Planned | Polish, widgets, privacy policy, hosting in production, TestFlight, distribution (internal first; a public name is undecided, "Outlook Next Wave" is internal only). |
-| Later | Calendar, contacts, Apple Watch, iPad | — | — |
+| Later | Calendar, contacts, Apple Watch, iPad. The Calendar tab exists on mock data; real calendar read access moves earlier if it is to run on real data. | — | — |
 
 ## Owner-only tasks (agents can't do these)
 | Task | Needed by | Status |

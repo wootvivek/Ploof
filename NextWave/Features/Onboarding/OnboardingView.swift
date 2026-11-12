@@ -19,7 +19,7 @@ struct OnboardingView: View {
              body: "Outlook finds what you have committed to, and what others have committed to you, inside your email. Mark them done with a swipe."),
         Page(symbol: "bubble.left.and.text.bubble.right",
              title: "Ask your inbox anything",
-             body: "Where does the Northwind deal stand? What needs my approval? Just ask, and Outlook shows its sources."),
+             body: "Where does the Northwind rollout stand? What needs my approval? Just ask, and Outlook shows its sources."),
     ]
 
     var body: some View {
@@ -63,7 +63,7 @@ struct OnboardingView: View {
                 .controlSize(.extraLarge)
                 .padding(.horizontal, 24)
 
-                Text("Proof of concept · synthetic Contoso mailbox")
+                Text("Proof of concept · synthetic mailbox, fictional team")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .padding(.bottom, 8)

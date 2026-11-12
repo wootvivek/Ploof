@@ -10,9 +10,10 @@ struct TodayView: View {
 
     var body: some View {
         let items = store.todayItems(section)
+        let plan = store.weekPlan
         NavigationStack {
             List {
-                BriefCard(brief: store.brief, section: $section)
+                BriefCard(brief: store.brief, section: $section, onWeek: { store.selectedTab = .calendar }, isLive: store.isLive)
                     .plainRow(top: 4, bottom: 10)
 
                 SectionHeader(title: section.title, symbol: section.symbol, trailing: "\(items.count)")
@@ -28,7 +29,7 @@ struct TodayView: View {
                 }
 
                 ForEach(items) { item in
-                    row(item)
+                    row(item, plan: plan)
                 }
 
                 if section == .updates {
@@ -77,36 +78,70 @@ struct TodayView: View {
     }
 
     @ViewBuilder
-    private func row(_ item: TodayItem) -> some View {
+    private func row(_ item: TodayItem, plan: WeekPlan) -> some View {
+        let next = action(for: item, plan: plan)
         if let commitment = item.commitment {
             let puffing = store.puffing.contains(commitment.id)
-            let showFollowUp = section == .waiting && commitment.isOverdue && !puffing
+            let fit = section == .needsYou ? plan.fit(commitment.id) : .notAssessed
             NavRow(route: ThreadRoute(id: item.thread.id)) {
-                CommitmentCard(commitment: commitment, isPuffing: puffing)
+                CommitmentCard(commitment: commitment, isPuffing: puffing, fit: fit, action: puffing ? nil : next)
             }
-            .plainRow(top: 6, bottom: showFollowUp ? 2 : 6)
-            .commitmentSwipeActions(commitment, store: store)
-
-            if showFollowUp {
-                HStack {
-                    Spacer()
-                    Button {
-                        compose = store.followUpDraft(for: commitment)
-                    } label: {
-                        Label("Follow up with \(commitment.person.firstName)", systemImage: "arrowshape.turn.up.right.fill")
-                            .foregroundStyle(.white)
-                    }
-                    .buttonStyle(.glassProminent)
-                    .tint(Theme.today)
-                }
-                .plainRow(top: 2, bottom: 12)
+            .plainRow()
+            .commitmentSwipeActions(commitment, store: store,
+                                    canHold: store.canHoldTime(for: commitment, in: plan)) {
+                compose = store.newDateDraft(for: commitment)
             }
         } else {
             NavRow(route: ThreadRoute(id: item.thread.id)) {
-                MailCard(thread: item.thread)
+                MailCard(thread: item.thread, action: next)
             }
             .plainRow()
             .mailSwipeActions(item.thread, store: store)
+        }
+    }
+
+    /// The most likely next step for an item, in this order: fix a date that can't be met, send the
+    /// reply that's already drafted, protect the time, or start a reply.
+    private func action(for item: TodayItem, plan: WeekPlan) -> CardAction? {
+        let thread = item.thread
+        switch section {
+        case .needsYou:
+            if let commitment = item.commitment, plan.fit(commitment.id).isAtRisk {
+                return CardAction(label: "Propose new date", symbol: "calendar.badge.clock", tint: Theme.overdue) {
+                    compose = store.newDateDraft(for: commitment)
+                }
+            }
+            if let quick = thread.quickReply {
+                let finishes = quick.completes ? item.commitment?.id : nil
+                return CardAction(preview: "\u{201C}\(quick.text)\u{201D}", label: quick.label, symbol: "paperplane.fill") {
+                    store.quickSend(quick.text, on: thread.id, completing: finishes)
+                }
+            }
+            if let commitment = item.commitment, store.canHoldTime(for: commitment, in: plan),
+               let first = plan.slots(for: commitment.id).first {
+                let more = plan.slots(for: commitment.id).count - 1
+                return CardAction(preview: "Planned: \(WeekText.dayAndTimes(first))\(more > 0 ? " and \(more) more" : "")",
+                                  label: "Hold time", symbol: "lock.fill") {
+                    store.holdTime(for: commitment.id)
+                }
+            }
+            return CardAction(label: "Reply", symbol: "arrowshape.turn.up.left.fill") {
+                compose = .reply(to: thread, body: thread.suggestedReplies.first ?? "", completes: item.commitment?.id)
+            }
+        case .waiting:
+            guard let commitment = item.commitment else { return nil }
+            if store.followedUp.contains(commitment.id) {
+                return CardAction(preview: "You followed up just now.")
+            }
+            guard commitment.isOverdue else { return nil }
+            let draft = store.followUpDraft(for: commitment)?.body ?? ""
+            return CardAction(preview: "\u{201C}\(draft)\u{201D}", label: "Follow up", symbol: "paperplane.fill", tint: Theme.today) {
+                store.sendFollowUp(for: commitment)
+            }
+        case .updates, .notifications:
+            return CardAction(label: "Got it", symbol: "checkmark", tint: TriageBucket.updates.tint) {
+                store.archive(thread.id)
+            }
         }
     }
 }

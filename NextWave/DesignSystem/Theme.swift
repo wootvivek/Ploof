@@ -47,9 +47,9 @@ extension Date {
     /// Compact timestamp for mail lists: "9:41 AM", "Yesterday", "Tue", "Nov 2".
     var listLabel: String {
         let cal = Calendar.current
-        if cal.isDateInToday(self) { return formatted(date: .omitted, time: .shortened) }
-        if cal.isDateInYesterday(self) { return "Yesterday" }
-        if let days = cal.dateComponents([.day], from: self, to: .now).day, days < 7 {
+        if AppClock.isToday(self) { return formatted(date: .omitted, time: .shortened) }
+        if AppClock.isYesterday(self) { return "Yesterday" }
+        if let days = cal.dateComponents([.day], from: self, to: AppClock.now).day, days < 7 {
             return formatted(.dateTime.weekday(.abbreviated))
         }
         return formatted(.dateTime.month(.abbreviated).day())

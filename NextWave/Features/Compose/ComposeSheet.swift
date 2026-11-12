@@ -63,6 +63,15 @@ struct ComposeSheet: View {
                         .padding(.vertical, 10)
                         .glassEffect(.regular.tint(Theme.done.opacity(0.12)), in: .rect(cornerRadius: 18))
                     }
+                    if let newDue = draft.newDue {
+                        Label("Sending moves the due date to \(newDue.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))",
+                              systemImage: "calendar.badge.clock")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .glassEffect(.regular, in: .rect(cornerRadius: 18))
+                    }
                     Button(action: rewrite) {
                         Label(isRewriting ? "Rewriting in your voice…" : "Rewrite in my voice",
                               systemImage: "wand.and.sparkles")

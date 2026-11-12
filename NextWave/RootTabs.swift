@@ -13,6 +13,9 @@ struct RootTabs: View {
                 MailListView()
             }
             .badge(store.unreadNeedsYou)
+            Tab("Calendar", systemImage: "calendar", value: AppTab.calendar) {
+                CalendarView()
+            }
             Tab("Settings", systemImage: "gearshape", value: AppTab.settings) {
                 SettingsView()
             }
@@ -22,9 +25,10 @@ struct RootTabs: View {
         }
         .tabBarMinimizeBehavior(.onScrollDown)
         .sensoryFeedback(.success, trigger: store.doneTick)
+        .sensoryFeedback(.impact(weight: .medium), trigger: store.arrivalTick)
         .overlay(alignment: .bottom) {
             if let toast = store.toast {
-                ToastView(toast: toast) { store.undo($0) }
+                ToastView(toast: toast) { store.undo(toast) }
                     .padding(.bottom, 104)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .task(id: toast.id) {

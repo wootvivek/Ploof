@@ -11,57 +11,86 @@ enum MockAsk {
     }
 
     static let suggestions = [
-        "Where does the Northwind deal stand?",
+        "Where does the Northwind rollout stand?",
         "What does Patti need from me?",
         "What is overdue from other people?",
-        "What's blocking the Mark 8 launch gate?",
-        "What needs my approval?",
+        "What's blocking the Sandpiper release review?",
+        "Do I have time for everything this week?",
         "Summarize my day",
     ]
 
     /// Checked in order, so the more specific scripts come first.
     private static var scripts: [Script] {
         [
-            Script(keywords: ["412", "escalation", "outage", "offline units"],
-                   answer: "Nine pilot units at Northwind store #412 went offline last night after the 2.3.1 firmware push. Engineering is rolling back, and firmware 2.3.2 with the fix goes to pilot sites \(C.wd(2)). Robin is waiting for you to approve the customer note, and Charlotte left a voicemail asking for a call before noon.",
-                   citations: ["nw-escalation", "teams-voicemail", "firmware-232"]),
-            Script(keywords: ["northwind", "charlotte", "msa"],
-                   answer: "Three things are open with Northwind. Legal needs your decision on the liability cap and SLA credits by \(C.wd(1)). You committed to sending Charlotte pricing at 5,000 and 8,000 units by \(C.wd(2)), now with a 3-year option, before her steering committee on \(C.wd(3)). Their security review of your questionnaire runs until about \(C.md(7)). Separately, store #412 had an outage this morning that is being rolled back.",
+            Script(keywords: ["escalation", "shared mailbox", "sync fault", "not syncing", "sev a"],
+                   answer: "About 9,200 Android devices at Northwind stopped syncing shared mailboxes last night after build 4.2446 reached their ring. Engineering is rolling back, and build 4.2447 with the fix goes to the preview ring \(C.wd(2)). Robin is waiting for you to approve the customer note, and Charlotte left a voicemail asking for a call before noon.",
+                   citations: ["nw-escalation", "teams-voicemail", "build-notes"]),
+            Script(keywords: ["northwind", "charlotte", "pilot agreement"],
+                   answer: "Three things are open with Northwind. Legal needs your decision on transcript retention and Sev A response time by \(C.wd(1)). You committed to sending Charlotte the rollout plan at 5,000 and 8,000 devices by \(C.wd(2)), now with delegate mailboxes, before her steering committee on \(C.wd(3)). Their security review of your questionnaire runs until about \(C.md(7)). Separately, their shared mailboxes stopped syncing this morning and the build is being rolled back.",
                    citations: ["nw-msa", "nw-pricing", "nw-questionnaire", "nw-escalation"]),
-            Script(keywords: ["patti", "board deck", "board meeting", "pre-read"],
-                   answer: "You have one commitment to Patti: the Mark 8 section of the board deck, due today. She asked for launch readiness, pilot results and the revised unit forecast. Debra wants it in the new template, five slides at most, because the pre-read goes out tonight. One dependency is late: Pradeep's revised unit cost model.",
+            Script(keywords: ["patti", "leadership review", "pre-read"],
+                   answer: "You have one commitment to Patti: the Sandpiper section for the leadership review, due today. She asked for release readiness, pilot results and the revised adoption forecast. Debra wants it in the new template, five slides at most, because the pre-read goes out tonight. One dependency is overdue: Pradeep's revised cost model.",
                    citations: ["board-deck", "unit-cost"]),
             Script(keywords: ["overdue", "late on", "who's late", "whos late", "owes me", "owed to me", "waiting on"],
-                   answer: "Five commitments to you are overdue: the launch dashboard link from Daisy, the 8D report for lot 2231 from Lydia at Fabrikam, a revised estimate from Miguel at Proseware, the unit cost model from Pradeep, and the freight quotes from Daichi. I've drafted a follow-up for each.",
+                   answer: "Five commitments to you are overdue: the release dashboard link from Daisy, the root cause report for the RC2 crash from Lydia at Fabrikam, a revised estimate from Miguel at Proseware, the cost model from Pradeep, and the localization quotes from Daichi. I've drafted a follow-up for each.",
                    citations: ["dashboard", "fab-8d", "proseware-estimate", "unit-cost", "freight"]),
-            Script(keywords: ["launch gate", "blocking", "blocker", "launch risk", "readiness"],
-                   answer: "Three items stand between you and the launch gate on \(C.md(9)). Battery yield: Fabrikam needs your go-ahead on Rev C by \(C.wd(1)), which costs four days. Security: three pen-test findings need owners by \(C.wd(2)), and the fix for the high one is already merged. Certification: emissions passed, and the lab's final report is due \(C.md(5)).",
+            Script(keywords: ["release review", "blocking", "blocker", "release risk", "readiness", "ship"],
+                   answer: "Three items stand between you and the release review on \(C.md(9)). Android crash rate: Fabrikam needs your go-ahead on RC3 by \(C.wd(1)), which costs four days. Security: three pen-test findings need owners by \(C.wd(2)), and the fix for the high one is already merged. Accessibility: the second conformance run passed, and the lab's final report is due \(C.md(5)).",
                    citations: ["launch-gate", "fab-revc", "sec-review", "cert-status"]),
             Script(keywords: ["approval", "approve", "nda", "sow"],
                    answer: "Four approvals are waiting on you. Cameron Evans's Senior PM offer (a competing offer expires \(C.wd(2))), the $86,000 Southridge Video SOW, Lidia's $2,418.60 expense report, and the Wingtip Toys NDA, which needs your signature before their kickoff on \(C.wd(3)).",
                    citations: ["offer-cameron", "sow-southridge", "expense-lidia", "nda-wingtip"]),
-            Script(keywords: ["pilot", "adventure works", "tanaka"],
-                   answer: "The Adventure Works pilot ran 38 units for 9 weeks with 99.2% uptime, and technicians closed 17% more jobs per day. Before a full order, Ray wants offline mode for the canyon sites and a rugged case option. Elvia proposed \(C.wd(2)) at 10 for the review, and Kristin is sending uptime by site.",
+            Script(keywords: ["pilot", "adventure works", "tanaka", "voice"],
+                   answer: "The Adventure Works pilot put voice catch-up in the hands of 380 field staff for 9 weeks, with 99.2% crash-free sessions and 17% more mail cleared before the first job of the day. Before a full rollout, Ray wants offline playback for the canyon sites and support in the truck's dashboard. Elvia proposed \(C.wd(2)) at 10 for the review, and Kristin is sending usage by site.",
                    citations: ["aw-pilot", "aw-sitedata", "customer-quote"]),
-            Script(keywords: ["pricing study", "trey", "willingness", "price point"],
-                   answer: "Trey Research surveyed 412 store and field managers. Willingness to pay holds up to $349 and drops sharply above $379. For context, VanArsdel just cut the V3 to $329 but charges $8 a month for its dashboard. Katri offered \(C.wd(2)) at 2 PM or \(C.wd(3)) at 11 AM for the full readout.",
-                   citations: ["trey-readout", "vanarsdel-v3"]),
+            Script(keywords: ["user study", "trey", "research"],
+                   answer: "Trey Research studied 412 mobile users. People use voice catch-up for sessions of up to four minutes and drop off sharply after six. Katri offered \(C.wd(2)) at 2 PM or \(C.wd(3)) at 11 AM for the full readout, and Mona's synthesis of the frontline interviews is due \(C.wd(3)).",
+                   citations: ["trey-readout", "research-synthesis"]),
             Script(keywords: ["vanarsdel", "competit"],
-                   answer: "VanArsdel cut the V3 to $329 and sells its dashboard separately at $8 per unit per month, which comes to $617 over three years. You committed to a one-page competitive brief on it for Miriam. That was due \(C.wd(-1)), and she presents to the sales team \(C.wd(1)).",
+                   answer: "VanArsdel announced Mail 3 with AI triage and a daily summary, for a separate $8 per user per month, and only for its own mailboxes. You committed to a one-page competitive brief on it for Miriam. That was due \(C.wd(-1)), and she presents to the field \(C.wd(1)).",
                    citations: ["vanarsdel-v3", "comp-brief"]),
             Script(keywords: ["flight", "chicago", "trip", "travel"],
                    answer: "You fly Blue Yonder Airlines BY 1482 from Seattle to Chicago on \(C.md(6)), departing 7:10 AM and arriving 1:05 PM, seat 12C. The confirmation code is R4TQ9M. Your hotel is two nights, a short walk from Northwind's headquarters.",
                    citations: ["itinerary", "eticket"]),
             Script(keywords: ["offsite"],
-                   answer: "The leadership offsite is at Alpine Ski House, \(C.md(15)) to \(C.md(16)). You're presenting a 45-minute session, 'Mark 8: the first 100 days'. Debra needs your session title, AV needs and dietary restrictions by \(C.wd(3)).",
+                   answer: "The leadership offsite is at Alpine Ski House, \(C.md(15)) to \(C.md(16)). You're presenting a 45-minute session, 'Sandpiper: the first 100 days'. Debra needs your session title, AV needs and dietary restrictions by \(C.wd(3)).",
                    citations: ["offsite", "alpine-booking"]),
             Script(keywords: ["budget", "fy27", "emily"],
-                   answer: "Your FY27 budget for cost center 4410 is due \(C.wd(1)), when Finance locks the first pass. You need Megan's final marketing number to finish it, and she committed to that for today. Carlos is also still reviewing your $310K capex request for test fixtures.",
+                   answer: "Your FY27 budget for cost center 4410 is due \(C.wd(1)), when Finance locks the first pass. You need Megan's final marketing number to finish it, and she said she would send it today. Carlos is also still reviewing your $310K capex request for the device lab.",
                    citations: ["budget-fy27", "mkt-number", "capex-fixtures"]),
-            Script(keywords: ["fabrikam", "battery", "rev c", "yield"],
-                   answer: "Battery lot 2231 came in at 91.4% yield against a 96% target because of a weld on the tab connector. Rev C fixes it and adds four days. Lee recommends taking it, and Mauricio needs your written go-ahead by \(C.wd(1)). Lydia's 8D report on the root cause is overdue.",
+            Script(keywords: ["fabrikam", "crash", "rc3", "release candidate"],
+                   answer: "Release candidate 2 came in at 99.1% crash-free sessions against a 99.6% target because of the attachment preview cache on low-memory Android devices. RC3 fixes it and adds four days to the test pass. Lee recommends taking it, and Mauricio needs your written go-ahead by \(C.wd(1)). Lydia's root cause report is overdue.",
                    citations: ["fab-revc", "fab-8d", "fab-po"]),
         ]
+    }
+
+    /// Computed from the same planner Today uses, so the numbers always agree with the week screen.
+    private static var weekFit: Script {
+        let commitments = MockCommitments.all
+        let plan = WeekPlanner.plan(now: AppClock.now, commitments: commitments, events: MockCalendar.events, holds: MockCalendar.holds)
+        let atRisk = plan.atRisk.compactMap { id in commitments.first { $0.id == id } }
+        let open = Effort.total(plan.openMinutes), needed = Effort.total(plan.neededMinutes)
+        guard !atRisk.isEmpty else {
+            return Script(keywords: ["have time", "enough time", "at risk", "this week", "capacity", "overcommitted"],
+                          answer: "Yes. Over the next five working days you have \(open) open and \(needed) of commitments with an estimate, and each one has room before it's due.",
+                          citations: [])
+        }
+        let parts = atRisk.map { c -> String in
+            var short = ""
+            if case let .atRisk(_, shortBy) = plan.fit(c.id) { short = ", \(Effort.text(shortBy)) short" }
+            let due = c.due.map { " (due \($0.formatted(.dateTime.weekday(.wide)))\(short))" } ?? ""
+            return "\(c.title.prefix(1).lowercased() + c.title.dropFirst())\(due)"
+        }
+        let moves = atRisk.map { c -> String in
+            let to = WeekPlanner.earliestWorkableDue(for: c, now: AppClock.now, commitments: commitments,
+                                                     events: MockCalendar.events, holds: MockCalendar.holds)
+            return "\(c.person.firstName) for \(to.formatted(.dateTime.weekday(.wide)))"
+        }
+        return Script(
+            keywords: ["have time", "enough time", "at risk", "this week", "capacity", "overcommitted"],
+            answer: "Not all of it. Over the next five working days you have \(open) open and \(needed) of commitments, but most of the open time comes late. \(atRisk.count) are at risk: \(parts.joined(separator: "; ")). You could ask \(moves.joined(separator: " and ")).",
+            citations: atRisk.map(\.threadID)
+        )
     }
 
     private static var daySummary: Script {
@@ -73,14 +102,14 @@ enum MockAsk {
         let mailOnly = MockThreads.all.filter { $0.folder == .inbox && $0.bucket == .needsYou && !committed.contains($0.id) }.count
         return Script(
             keywords: ["summar", "my day", "my week", "today", "brief"],
-            answer: "\(mine.count + mailOnly) things need you, and \(dueNow) of them are due today or overdue: the Northwind outage note for Robin, the Mark 8 section for Patti's board deck, the Adventure Works slide for Isaiah, and the VanArsdel brief for Miriam, which is overdue. The outage note is the most urgent, because Robin needs it within the hour. \(late) commitments to you are overdue, and one of them, Pradeep's cost model, holds up your board deck.",
+            answer: "\(mine.count + mailOnly) things need you, and \(dueNow) of them are due today or overdue: the Northwind customer note for Robin, the Sandpiper section for Patti's leadership review, the Adventure Works slide for Isaiah, and the VanArsdel brief for Miriam, which is overdue. The customer note is the most urgent, because Robin needs it within the hour. \(late) commitments to you are overdue, and one of them, Pradeep's cost model, holds up your leadership slides.",
             citations: ["nw-escalation", "board-deck", "ref-slide", "comp-brief", "unit-cost"]
         )
     }
 
     static func answer(for question: String) -> AskAnswer {
         let q = question.lowercased()
-        if let script = (scripts + [daySummary]).first(where: { s in s.keywords.contains(where: { q.contains($0) }) }) {
+        if let script = (scripts + [weekFit, daySummary]).first(where: { s in s.keywords.contains(where: { q.contains($0) }) }) {
             return AskAnswer(question: question, text: script.answer, citations: script.citations)
         }
         return AskAnswer(

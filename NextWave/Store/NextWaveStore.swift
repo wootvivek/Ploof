@@ -7,6 +7,19 @@ import AudioToolbox
 final class NextWaveStore {
     var threads: [MailThread] = MockThreads.all
     var commitments: [Commitment] = MockCommitments.all
+    /// The mock calendar, and time held for commitments. Held time is private to the user.
+    var events: [CalendarEvent] = MockCalendar.events
+    var holds: [Hold] = MockCalendar.holds
+    /// The holds made by the latest "Hold time", per commitment, so Undo can release exactly those.
+    private var lastHolds: [String: [String]] = [:]
+    /// Other people's commitments you have already followed up on in this session.
+    var followedUp: Set<String> = []
+    /// State from just before the latest one-tap send, so Undo can take the message back.
+    private var beforeSend: (threads: [MailThread], commitments: [Commitment], followedUp: Set<String>)?
+    /// True while the sync engine is receiving events. Shown as "Live" on Today.
+    var isLive = false
+    /// Bumped when mail that needs you arrives, so the app can tap you on the wrist.
+    var arrivalTick = 0
 
     // Navigation state that other screens can drive
     var selectedTab: AppTab = .today
@@ -85,7 +98,8 @@ final class NextWaveStore {
             thread(commitment.threadID).map { TodayItem(thread: $0, commitment: commitment) }
         }
         // An email drops off this list once its commitment is done or snoozed; "not a commitment" keeps it.
-        let covered = Set(commitments.filter { $0.direction == direction && $0.status != .dismissed }.map(\.threadID))
+        // A thread also drops out when it carries an open commitment on the other side: it is listed there.
+        let covered = Set(commitments.filter { $0.status != .dismissed && ($0.direction == direction || $0.status == .open) }.map(\.threadID))
         let mailOnly = threads(in: .inbox, bucket: bucket)
             .filter { !covered.contains($0.id) }
             .map { TodayItem(thread: $0, commitment: nil) }
@@ -98,6 +112,98 @@ final class NextWaveStore {
             default: a.thread.lastDate > b.thread.lastDate
             }
         }
+    }
+
+    // MARK: Sync
+
+    /// Replaces the mailbox with a snapshot from the service and clears anything left from before.
+    func load(_ snapshot: MailboxSnapshot) {
+        withAnimation(.snappy) {
+            threads = snapshot.threads
+            commitments = snapshot.commitments
+            events = snapshot.events
+            holds = snapshot.holds
+        }
+        puffing = []
+        followedUp = []
+        lastHolds = [:]
+        beforeSend = nil
+        toast = nil
+        mailFolder = .inbox
+        mailBucket = .needsYou
+    }
+
+    /// Applies one event from the service.
+    func apply(_ event: ServiceEvent) {
+        // A commitment someone else delivered plays the same puff as one you mark done yourself.
+        if case let .commitmentDone(id) = event, let commitment = commitment(id) {
+            complete(id, announce: false)
+            show(Toast(symbol: "checkmark.seal.fill", text: "\(commitment.person.firstName) delivered: \(commitment.title)"))
+            return
+        }
+        var mailbox = MailboxSnapshot(threads: threads, commitments: commitments, events: events, holds: holds)
+        let notice = mailbox.apply(event, at: AppClock.now)
+        withAnimation(.snappy) {
+            threads = mailbox.threads
+            commitments = mailbox.commitments
+            events = mailbox.events
+        }
+        guard let notice else { return }
+        if notice.needsYou { arrivalTick += 1 }
+        if notice.needsYou || !buzzOnlyForNeedsYou || notice.symbol.hasPrefix("calendar") {
+            show(Toast(symbol: notice.symbol, text: notice.text))
+        }
+    }
+
+    // MARK: Time
+
+    /// Whether your commitments fit in the days in view. Recomputed from current state.
+    var weekPlan: WeekPlan {
+        WeekPlanner.plan(now: AppClock.now, commitments: commitments, events: events, holds: holds)
+    }
+
+    func commitments(atRiskIn plan: WeekPlan) -> [Commitment] {
+        plan.atRisk.compactMap { commitment($0) }
+    }
+
+    /// True when there is planned open time for this commitment that isn't held yet.
+    func canHoldTime(for commitment: Commitment, in plan: WeekPlan) -> Bool {
+        commitment.direction == .yours && plan.fit(commitment.id) == .fits && !plan.slots(for: commitment.id).isEmpty
+    }
+
+    /// Turns the open time planned for a commitment into held time on the calendar.
+    func holdTime(for id: String) {
+        let pieces = weekPlan.slots(for: id)
+        guard let commitment = commitment(id), !pieces.isEmpty else {
+            show(Toast(symbol: "calendar.badge.exclamationmark", text: "No open time to hold"))
+            return
+        }
+        let new = pieces.map { Hold(id: UUID().uuidString, commitmentID: id, start: $0.start, end: $0.end) }
+        withAnimation(.snappy) { holds += new }
+        lastHolds[id] = new.map(\.id)
+        let minutes = new.reduce(0) { $0 + $1.minutes }
+        show(Toast(symbol: "calendar.badge.checkmark", text: "Held \(Effort.text(minutes)): \(commitment.title)", undoHoldsFor: id))
+    }
+
+    /// A reply that asks for a later date and gives the reason as a fact. Sending it moves the due date.
+    func newDateDraft(for commitment: Commitment) -> ComposeDraft? {
+        guard let thread = thread(commitment.threadID), let due = commitment.due else { return nil }
+        let newDue = WeekPlanner.earliestWorkableDue(for: commitment, now: AppClock.now, commitments: commitments,
+                                                     events: events, holds: holds)
+        let oldDay = due.formatted(.dateTime.weekday(.wide))
+        let newDay = newDue.formatted(.dateTime.weekday(.wide))
+        var reason = "I want to do this properly and I can't by \(oldDay)."
+        if let effort = commitment.effort, case let .atRisk(open, _) = weekPlan.fit(commitment.id) {
+            let have = open == 0 ? "no open time" : "\(Effort.text(open)) open"
+            reason = "I want to do this properly, and the time isn't there before \(oldDay): it needs \(effort.label) and I have \(have), with other work due first."
+        }
+        var draft = ComposeDraft.reply(
+            to: thread,
+            body: "Hi \(commitment.person.firstName), \(reason) Could I get it to you by end of day \(newDay) instead? Thanks!"
+        )
+        draft.newDueFor = commitment.id
+        draft.newDue = newDue
+        return draft
     }
 
     /// Jump to the Mail tab with a triage filter applied.
@@ -142,11 +248,14 @@ final class NextWaveStore {
     }
 
     var brief: Brief {
-        let hour = Calendar.current.component(.hour, from: .now)
+        let hour = Calendar.current.component(.hour, from: AppClock.now)
         let part = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"
         let mine = todayItems(.needsYou)
         let theirs = todayItems(.waiting)
         let updates = todayItems(.updates)
+        let plan = weekPlan
+        var weekLine = "Next 5 working days: \(Effort.total(plan.openMinutes)) open, \(Effort.total(plan.neededMinutes)) of commitments."
+        if !plan.atRisk.isEmpty { weekLine += " \(plan.atRisk.count) at risk." }
         let headline: String
         if let commitment = mine.first?.commitment {
             headline = "Start with: \(commitment.title.prefix(1).lowercased() + commitment.title.dropFirst()). \(commitment.person.firstName) is waiting."
@@ -157,7 +266,7 @@ final class NextWaveStore {
         }
         return Brief(
             greeting: "\(part), \(MockPeople.me.firstName)",
-            dateLine: Date.now.formatted(.dateTime.weekday(.wide).month(.wide).day()),
+            dateLine: AppClock.now.formatted(.dateTime.weekday(.wide).month(.wide).day()),
             needsYouCount: mine.count,
             overdueCount: mine.filter(\.isLate).count,
             dueTodayCount: mine.filter { $0.commitment?.isDueToday ?? false }.count,
@@ -166,13 +275,15 @@ final class NextWaveStore {
             updatesCount: updates.count,
             unreadUpdatesCount: updates.filter(\.thread.isUnread).count,
             headline: headline,
+            weekLine: weekLine,
+            atRiskCount: plan.atRisk.count,
             worthKnowing: updates.first?.thread.oneLiner
         )
     }
 
     // MARK: Commitment actions
 
-    func complete(_ id: String) {
+    func complete(_ id: String, announce: Bool = true) {
         guard commitment(id)?.status == .open, !puffing.contains(id) else { return }
         puffing.insert(id)
         doneTick += 1
@@ -183,7 +294,9 @@ final class NextWaveStore {
                 setStatus(id, .done)
                 puffing.remove(id)
             }
-            show(Toast(symbol: "checkmark.seal.fill", text: "Done: \(commitment(id)?.title ?? "")", undoCommitmentID: id))
+            if announce {
+                show(Toast(symbol: "checkmark.seal.fill", text: "Done: \(commitment(id)?.title ?? "")", undoCommitmentID: id))
+            }
         }
     }
 
@@ -200,6 +313,66 @@ final class NextWaveStore {
     func undo(_ id: String) {
         withAnimation(.snappy) { setStatus(id, .open) }
         toast = nil
+    }
+
+    func undo(_ toast: Toast) {
+        if let id = toast.undoHoldsFor {
+            let ids = Set(lastHolds[id] ?? [])
+            withAnimation(.snappy) { holds.removeAll { ids.contains($0.id) } }
+            lastHolds[id] = nil
+            self.toast = nil
+        }
+        if toast.undoSend, let before = beforeSend {
+            withAnimation(.snappy) {
+                threads = before.threads
+                commitments = before.commitments
+                followedUp = before.followedUp
+            }
+            beforeSend = nil
+            self.toast = nil
+        }
+        if let id = toast.undoCommitmentID { undo(id) }
+    }
+
+    // MARK: One-tap actions
+
+    /// Sends a drafted reply in one tap. The user sees the text on the card before tapping, and can undo.
+    /// `completing` is the commitment this reply finishes, if any.
+    func quickSend(_ text: String, on threadID: String, completing commitmentID: String? = nil) {
+        guard let thread = thread(threadID) else { return }
+        beforeSend = (threads, commitments, followedUp)
+        // Name the person the reply is for, who is not always the last person to write on the thread.
+        let name = commitmentID.flatMap { commitment($0)?.person.firstName } ?? thread.counterpart.firstName
+        withAnimation(.snappy) { appendReply(text, to: threadID) }
+        if let commitmentID { complete(commitmentID, announce: false) }
+        show(Toast(symbol: "paperplane.fill", text: "Sent to \(name)", undoSend: true))
+    }
+
+    /// Sends the drafted follow-up for someone else's overdue commitment in one tap.
+    func sendFollowUp(for commitment: Commitment) {
+        guard let draft = followUpDraft(for: commitment), let threadID = draft.threadID else { return }
+        beforeSend = (threads, commitments, followedUp)
+        withAnimation(.snappy) {
+            mutate(threadID) { thread in
+                thread.messages.append(Message(id: UUID().uuidString, from: MockPeople.me, date: AppClock.now, body: draft.body))
+                thread.oneLiner = "You followed up just now. Still waiting on \(commitment.person.firstName)."
+            }
+            followedUp.insert(commitment.id)
+        }
+        show(Toast(symbol: "paperplane.fill", text: "Follow-up sent to \(commitment.person.firstName)", undoSend: true))
+    }
+
+    private func appendReply(_ body: String, to threadID: String) {
+        mutate(threadID) { thread in
+            thread.messages.append(Message(id: UUID().uuidString, from: MockPeople.me, date: AppClock.now, body: body))
+            // Once you've replied, the ball is in their court.
+            if thread.bucket == .needsYou { thread.bucket = .waiting }
+            thread.isUnread = false
+            thread.suggestedReplies = []
+            thread.quickReply = nil
+            thread.stands = "You replied just now. The ball is in \(thread.counterpart.firstName)'s court, and Outlook will tell you if they go quiet."
+            thread.oneLiner = "You replied. Waiting on \(thread.counterpart.firstName)."
+        }
     }
 
     private func setStatus(_ id: String, _ status: CommitmentStatus) {
@@ -235,17 +408,7 @@ final class NextWaveStore {
     func send(_ draft: ComposeDraft) {
         let body = draft.body.trimmingCharacters(in: .whitespacesAndNewlines)
         if let threadID = draft.threadID {
-            withAnimation(.snappy) {
-                mutate(threadID) { thread in
-                    thread.messages.append(Message(id: UUID().uuidString, from: MockPeople.me, date: .now, body: body))
-                    // Once you've replied, the ball is in their court.
-                    if thread.bucket == .needsYou { thread.bucket = .waiting }
-                    thread.isUnread = false
-                    thread.suggestedReplies = []
-                    thread.stands = "You replied just now. The ball is in \(thread.counterpart.firstName)'s court, and Outlook will tell you if they go quiet."
-                    thread.oneLiner = "You replied. Waiting on \(thread.counterpart.firstName)."
-                }
-            }
+            withAnimation(.snappy) { appendReply(body, to: threadID) }
         } else {
             let thread = MailThread(
                 id: UUID().uuidString,
@@ -255,7 +418,7 @@ final class NextWaveStore {
                 isUnread: false,
                 oneLiner: "You wrote to \(draft.to.isEmpty ? "someone" : draft.to).",
                 stands: "Waiting on a reply.",
-                messages: [Message(id: UUID().uuidString, from: MockPeople.me, date: .now, body: body)]
+                messages: [Message(id: UUID().uuidString, from: MockPeople.me, date: AppClock.now, body: body)]
             )
             threads.append(thread)
         }
@@ -265,6 +428,10 @@ final class NextWaveStore {
                 try? await Task.sleep(for: .milliseconds(450))
                 complete(commitmentID)
             }
+        } else if let commitmentID = draft.newDueFor, let newDue = draft.newDue,
+                  let i = commitments.firstIndex(where: { $0.id == commitmentID }) {
+            withAnimation(.snappy) { commitments[i].due = newDue }
+            show(Toast(symbol: "calendar.badge.clock", text: "New date proposed: \(newDue.formatted(.dateTime.weekday(.wide)))"))
         } else {
             show(Toast(symbol: "paperplane.fill", text: "Sent"))
         }

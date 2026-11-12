@@ -1,7 +1,8 @@
 import Foundation
 
-/// A synthetic enterprise mailbox for the proof of concept: Vivek's inbox at Contoso
-/// in the weeks before the Mark 8 launch. Times are relative to "now" so the demo always looks fresh.
+/// A synthetic mailbox for the proof of concept: Vivek's inbox on a fictional Outlook Mobile team at
+/// Microsoft, in the weeks before a fictional release called Sandpiper. Times are relative to "now" so
+/// the demo always looks fresh. People, projects and numbers are invented; see `MockPeople`.
 ///
 /// The threads live in the `MockThreads+….swift` files next to this one, grouped by triage bucket.
 enum MockThreads {
@@ -17,6 +18,7 @@ enum MockThreads {
         oneLiner: String,
         stands: String,
         replies: [String] = [],
+        quick: QuickReply? = nil,
         messages: [(Person, Double, String)]
     ) -> MailThread {
         MailThread(
@@ -31,6 +33,7 @@ enum MockThreads {
             oneLiner: oneLiner,
             stands: stands,
             suggestedReplies: replies,
+            quickReply: quick,
             messages: messages.enumerated().map { index, item in
                 Message(id: "\(id)-\(index)", from: item.0, date: MockClock.ago(item.1), body: item.2)
             }

@@ -5,7 +5,12 @@ import SwiftUI
 struct BriefCard: View {
     let brief: Brief
     @Binding var section: TriageBucket
+    var onWeek: () -> Void = {}
+    /// True while mail is arriving from the service.
+    var isLive = false
     @Environment(\.dynamicTypeSize) private var typeSize
+    /// Room for the leading symbol on each line; grows with the text size.
+    @ScaledMetric(relativeTo: .subheadline) private var symbolWidth: CGFloat = 22
 
     /// Tiles sit side by side normally, and stack at accessibility text sizes.
     private var tileLayout: AnyLayout {
@@ -15,10 +20,14 @@ struct BriefCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(brief.dateLine)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
+                HStack(alignment: .firstTextBaseline) {
+                    Text(brief.dateLine)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                    Spacer(minLength: 8)
+                    if isLive { LiveBadge() }
+                }
                 Text(brief.greeting)
                     .font(.title2.weight(.bold))
             }
@@ -35,6 +44,18 @@ struct BriefCard: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 line("sparkles", brief.headline)
+                Button(action: onWeek) {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        line("clock", brief.weekLine, color: brief.atRiskCount > 0 ? Theme.overdue : .accentColor)
+                        Spacer(minLength: 4)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .contentShape(.rect)
+                }
+                .buttonStyle(PressScaleStyle())
+                .accessibilityHint("Opens the calendar")
                 if let worthKnowing = brief.worthKnowing {
                     line(TriageBucket.updates.symbol, worthKnowing)
                 }
@@ -45,13 +66,15 @@ struct BriefCard: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 28))
     }
 
-    private func line(_ symbol: String, _ text: String) -> some View {
+    private func line(_ symbol: String, _ text: String, color: Color = .accentColor) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Image(systemName: symbol)
-                .foregroundStyle(.tint)
-                .frame(width: 22)
+                .foregroundStyle(color)
+                .frame(width: symbolWidth)
             Text(text)
                 .font(.subheadline)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -80,6 +103,27 @@ struct BriefCard: View {
         case .notifications:
             return ""
         }
+    }
+}
+
+/// A small pulsing dot that says mail is arriving right now.
+private struct LiveBadge: View {
+    var body: some View {
+        HStack(spacing: 5) {
+            Circle()
+                .fill(Theme.done)
+                .frame(width: 7, height: 7)
+                .phaseAnimator([0.35, 1]) { view, phase in
+                    view.opacity(phase)
+                } animation: { _ in
+                    .easeInOut(duration: 0.9)
+                }
+            Text("Live")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Live. Mail is arriving.")
     }
 }
 

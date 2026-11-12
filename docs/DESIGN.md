@@ -44,17 +44,36 @@ something new, copy an existing pattern from this doc rather than inventing a ne
 | `PressScaleStyle` | `Features/Today/BriefCard.swift` | Gentle squish for custom tappable cards. |
 | `commitmentSwipeActions` | `Features/Today/CommitmentCard.swift` | Done (right) / Snooze + Not a commitment (left). Reuse for any commitment list. |
 | `MailCard` / `mailSwipeActions` | `Features/Today/CommitmentCard.swift` | Email with no commitment, in the same skeleton as `CommitmentCard` (time where the due badge would be). Archive (right) / Read-Unread (left). |
+| `EffortBadge` / `AtRiskLine` | `Features/Today/CommitmentCard.swift` | The estimate under a commitment's title; the at-risk reason inside the card. |
+| `CardAction` / `CardActionBar` | `Features/Today/CommitmentCard.swift` | The foot of a card: a one- or two-line preview of what will happen (for a reply, the exact words) and one prominent button. Used by `CommitmentCard` and `MailCard`. |
+| `CalendarView` | `Features/Calendar/CalendarView.swift` | The Calendar tab: `WeekGrid` (five columns, also the day picker), `DayTimeline` (hour grid with `MeetingBlock` and `WorkBlock`), then At risk. |
+| `ChainSheet` | `Features/Calendar/ChainSheet.swift` | "Time for this": a commitment's steps in order around its meeting or due date, each Held, Planned or short, with Hold this time / Propose new date / Open the email. |
 
 ## Interaction patterns
 - **Commitments:** swipe right = done (full swipe allowed) → `.puff` animation, success haptic,
-  optional sound, toast with Undo. Swipe left = Snooze / Not a commitment. Overdue commitments pulse a red border.
+  optional sound, toast with Undo. Swipe left on your own = Hold time (when it fits) / New date / Not a commitment;
+  on other people's = Snooze / Not a commitment. Overdue commitments pulse a red border.
 - **Mail rows:** swipe left = Delete (full swipe) / Archive; swipe right = Read/Unread, Flag.
 - **Today mirrors Mail:** three tiles, Needs you · Waiting · Updates, with the same names, symbols and tints
   as the Mail chips (`TriageBucket.todaySections`). The tiles are the switch for the one list below; the
   selected tile has a tinted fill and outline. Don't add a second selector or separate sections for emails
   and commitments: an item appears once. On Today, swipe right always means "handled".
+- **Calendar colours:** booked is grey; each commitment gets its own colour, solid with a lock when held and
+  pale with a dashed edge when only planned. A meeting that some commitment's work is for carries that
+  commitment's colour as a bar and a diamond. Colour is never the only signal: every block also has an icon
+  and the words Held or Planned.
+- **Time:** an estimate is plain secondary text under the title, never a coloured badge. "At risk" uses the
+  overdue colour and always states its reason (needs, basis, open time).
+- **Arrivals:** new mail slides into the lists; only mail that needs you raises a toast and a tap on the
+  wrist. Calendar changes always raise a toast. A small pulsing "Live" badge sits on Today's brief while the
+  service is delivering. The Calendar's day view has a thin line in the overdue colour at the current time.
+- **One action per card, inside the card.** The button is a real button with its own tap; the rest of the card
+  opens the email. Show what the tap will do before it is tapped: the reply text in quotes, or the planned
+  time for a hold. Button labels are two or three words ("Approve", "Hold time", "Follow up", "Got it").
+  Anything that sends confirms with a toast that has Undo. Don't add a second button to a card; other
+  choices live in the swipe actions and in the thread.
 - **One vocabulary** (see the concepts table in `docs/PRODUCT.md`): commitment, yours / theirs, overdue,
-  due today, Done, Follow up, Updates, Notifications. Don't use promise, owe, late, settle, nudge or FYI in UI text.
+  due today, at risk, Booked / Held / Open, Hold time, Propose new date, Done, Follow up, Updates, Notifications. Don't use promise, owe, late, settle, nudge or FYI in UI text.
 - **Pushed lists** (when a screen needs one): large title + one-line secondary subtitle + glass cards on
   `NextWaveBackground` + standard back button.
 - **Replying** to a Needs you thread moves it to Waiting, clears suggested replies and updates its summary.
@@ -68,7 +87,7 @@ something new, copy an existing pattern from this doc rather than inventing a ne
 - Examples: "Nothing needs you. Enjoy it." · "Got it. Outlook will learn from this." · "Swipe right when it's done · left for more".
 
 ## Tab bar
-Today (`sparkles`) · Mail (`tray`, badge = unread Needs you) · Settings (`gearshape`) · Ask (search role,
+Today (`sparkles`) · Mail (`tray`, badge = unread Needs you) · Calendar (`calendar`) · Settings (`gearshape`) · Ask (search role,
 `sparkle.magnifyingglass`). Tab bar minimizes on scroll (`.tabBarMinimizeBehavior(.onScrollDown)`).
 Thread view hides the tab bar.
 
